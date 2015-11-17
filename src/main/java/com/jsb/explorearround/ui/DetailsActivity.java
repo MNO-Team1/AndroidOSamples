@@ -3,13 +3,12 @@ package com.jsb.explorearround.ui;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -21,27 +20,22 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.jsb.explorearround.R;
 import com.jsb.explorearround.parser.Location;
+import com.jsb.explorearround.parser.Photos;
 import com.jsb.explorearround.parser.Result;
 import com.jsb.explorearround.parser.Reviews;
 import com.jsb.explorearround.utils.PreferencesHelper;
+import com.squareup.picasso.Picasso;
 
 import java.text.DecimalFormat;
-import java.util.Arrays;
 
 /**
  * Created by JSB on 10/24/15.
  */
 
 
-public class DetailsActivity extends AppCompatActivity implements OnMapReadyCallback, View.OnClickListener {
+public class DetailsActivity extends AppCompatActivity implements /*OnMapReadyCallback,*/ View.OnClickListener {
 
     private static final String TAG = "DetailsActivity";
     private static Result mResults = null;
@@ -79,6 +73,10 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
     private TextView mWeekdayStatus; //weekday_text;
     private TextView mWeekdayHours; //weekday_hours;
 
+    //Image Loader
+    private ViewPager mViewPager;
+    private PagerAdapter mAdapter;
+    private String[] mUrl;
 
     public static void actionLaunchResultsActivity(Activity fromActivity, Result res, String photoWidth, String photoRef) {
         Intent i = new Intent(fromActivity, DetailsActivity.class);
@@ -169,9 +167,9 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
             mOpenHoursLayout.setVisibility(View.GONE);
         }
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+//        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
+//                .findFragmentById(R.id.map);
+//        mapFragment.getMapAsync(this);
 
         //setSupportActionBar((Toolbar) findViewById(R.id.toolbar));
         collapsingToolbarLayout = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
@@ -179,20 +177,34 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
         collapsingToolbarLayout.setExpandedTitleColor(getResources().getColor(android.R.color.transparent));
         collapsingToolbarLayout.setContentScrimColor(this.getResources().getColor(R.color.color_primary));
         collapsingToolbarLayout.setStatusBarScrimColor(this.getResources().getColor(R.color.color_primary));
-        //setPalette();
 
         toolbar = (Toolbar) findViewById(R.id.tool_bar); // Attaching the layout to the toolbar object
         toolbar.setTitle(mResults.getName());
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setDisplayShowHomeEnabled(true);
-        //setSupportActionBar(toolbar);
 
-//        String buildURL = URL +"maxwidth=" + mPhotoWidth + "&photoreference=" +
-//                mPhotoRef + "&key=AIzaSyC9OpeSXAjldUge51N0PPjg5DajOMGNTog" ;
-//        Picasso.with(this)
-//                .load(buildURL)
-//                .into(mImage);
+        Photos[] photos = mResults.getPhotos();
+        if (photos != null) {
+            int len = photos.length;
+            mUrl = new String[len];
+            for (int i=0; i<len; i++ ) {
+                mUrl[i] = URL +"maxwidth=" + mResults.getPhotos()[i].getWidth()
+                        + "&photoreference=" + mResults.getPhotos()[i].getPhoto_reference()
+                        + "&key=AIzaSyC9OpeSXAjldUge51N0PPjg5DajOMGNTog" ;
+            }
+        } else {
+            mUrl = new String[1];
+            mUrl[0] = URL + "maxwidth=" + mPhotoWidth + "&photoreference=" +
+                    mPhotoRef + "&key=AIzaSyC9OpeSXAjldUge51N0PPjg5DajOMGNTog";
+        }
+
+        // Locate the ViewPager in viewpager_main.xml
+        mViewPager = (ViewPager) findViewById(R.id.viewpager);
+        // Pass results to ViewPagerAdapter Class
+        mAdapter = new ViewPagerAdapter(DetailsActivity.this, mUrl);
+        // Binds the Adapter to the ViewPager
+        mViewPager.setAdapter(mAdapter);
     }
 
     private String calculateDst(Location location) {
@@ -210,8 +222,6 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
 
         Float dst = (srcLoc.distanceTo(dstLoc)/1000);
         Double miles = dst * 0.621;
-        //ret = NumberFormat.getInstance().format(miles);
-
 
         DecimalFormat df = new DecimalFormat();
         df.setMaximumFractionDigits(1);
@@ -263,19 +273,6 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
         }
     }
 
-    private void setPalette() {
-        Bitmap bitmap = ((BitmapDrawable) image.getDrawable()).getBitmap();
-        Palette.from(bitmap).generate(new Palette.PaletteAsyncListener() {
-            @Override
-            public void onGenerated(Palette palette) {
-                int primaryDark = getResources().getColor(R.color.primary_dark);
-                int primary = getResources().getColor(R.color.primary);
-                collapsingToolbarLayout.setContentScrimColor(palette.getMutedColor(primary));
-                collapsingToolbarLayout.setStatusBarScrimColor(palette.getDarkVibrantColor(primaryDark));
-            }
-        });
-
-    }
     @Override
     protected void onResume() {
         super.onResume();
@@ -294,15 +291,15 @@ public class DetailsActivity extends AppCompatActivity implements OnMapReadyCall
         Log.d(TAG, "onDestroy");
     }
 
-    @Override
-    public void onMapReady(GoogleMap map) {
-        // Add a marker in Sydney, Australia, and move the camera.
-        LatLng location = new LatLng(Double.valueOf(mResults.getGeometry().getLocation().getLatitude()),
-                Double.valueOf(mResults.getGeometry().getLocation().getLongtitude()));
-        map.addMarker(new MarkerOptions().position(location).title(mResults.getName()));
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 10));
-        map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-    }
+//    @Override
+//    public void onMapReady(GoogleMap map) {
+//        // Add a marker in Sydney, Australia, and move the camera.
+//        LatLng location = new LatLng(Double.valueOf(mResults.getGeometry().getLocation().getLatitude()),
+//                Double.valueOf(mResults.getGeometry().getLocation().getLongtitude()));
+//        map.addMarker(new MarkerOptions().position(location).title(mResults.getName()));
+//        map.moveCamera(CameraUpdateFactory.newLatLngZoom(location, 10));
+//        map.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+//    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

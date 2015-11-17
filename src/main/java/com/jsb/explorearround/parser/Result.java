@@ -40,6 +40,17 @@ public class Result {
     @SerializedName("opening_hours")
     private OpeningHours opening_hours;
 
+    @SerializedName("photos")
+    private Photos[] photos;
+
+    public Photos[] getPhotos() {
+        return photos;
+    }
+
+    public void setPhotos(Photos[] photos) {
+        this.photos = photos;
+    }
+
     public OpeningHours getOpening_hours() {
         return opening_hours;
     }
