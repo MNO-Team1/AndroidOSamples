@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Android N Sampleapp</string>
+    <string name="button1_text">Start Background Service</string>
+    <string name="button2_text">Stop Background Service</string>
+    <string name="welcome_text">Android N Sample App to validate the Background Service!!!</string>
+    <string name="ok_button">OK</string>
+    <string name="cancel_button">Cancel</string>
+</resources>
