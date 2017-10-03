@@ -1,6 +1,7 @@
 package com.samsung.mno.androidosampleapp;
 
 import android.content.Intent;
+import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -25,7 +26,13 @@ public class MainActivity extends AppCompatActivity {
 
         //Start the Demo service
         Intent i= new Intent(this, DemoService.class);
-        this.startService(i);
+        //Start the Radio Service
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //startForegroundService(i);
+            startService(i);
+        } else {
+            startService(i);
+        }
     }
 
     @OnClick(R.id.stop_bg_service)
